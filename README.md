@@ -76,28 +76,6 @@ CORS_ORIGIN=http://localhost:5173,http://localhost:4173,https://*.vercel.app
 NODE_ENV=development
 ```
 > Tip: set `USE_IN_MEMORY_DB=true` to automatically boot an in-memory MongoDB instance (powered by `mongodb-memory-server`) during local development. Data will reset on every restart, so keep it `false` for shared/staging/prod environments. You can tweak `MONGOMS_VERSION` if you need a different binary (4.4.x downloads are much smaller/quicker than the latest 7.x builds).
->
-> When deploying the frontend (e.g., Vercel), append its domain(s) to `CORS_ORIGIN`. Wildcards such as `https://*.vercel.app` are now supported so preview URLs keep working without manual updates.
-
-### Frontend (`client/.env`)
-```
-VITE_API_URL=http://localhost:5000
-```
-> Update `VITE_API_URL` to your deployed API base (e.g., Render/Heroku URL) before building on Vercel/Netlify; Vite inlines the value during build so leaving it at `localhost` causes production requests to fail with a network error.
-
-## Local Development
-```bash
-# 1. Install dependencies
-cd server && npm install
-cd ../client && npm install
-
-# 2. Run backend API (http://localhost:5000)
-cd server && npm run dev
-
-# 3. Run frontend SPA (http://localhost:5173)
-cd client && npm run dev
-```
-Seed the first admin by calling `POST /api/auth/register` (e.g., via Thunder Client/Postman). Subsequent account creation is controlled via the admin dashboard.
 
 ## API Route Design
 | Endpoint | Method | Description | Auth / Roles |
@@ -116,39 +94,6 @@ Seed the first admin by calling `POST /api/auth/register` (e.g., via Thunder Cli
 | `/api/attendance` | GET/POST | View attendance (students auto-filter) / mark attendance | Teachers & Admin (mark), all roles (view) |
 
 Auth middleware (`protect`) enforces JWT validation; `authorizeRoles` gates each route.
-
-## Deployment Guide
-### Backend → Render or Heroku
-1. Push the repo to GitHub.
-2. Provision a MongoDB Atlas cluster and grab the connection string.
-3. **Render**
-   - Create a new Web Service → pick the `server` subfolder.
-   - Set build command `cd server && npm install` and start command `cd server && npm start` (or use monorepo build scripts).
-   - Configure environment variables from `server/.env` (PORT, MONGO_URI, JWT_SECRET, CORS_ORIGIN, etc.).
-4. **Heroku**
-   - Create app → configure Config Vars (same as above).
-   - Add a buildpack for Node.js, set `NPM_CONFIG_PRODUCTION=false` if using dev deps, and set `Procfile` (e.g., `web: npm start --prefix server`).
-5. Update `VITE_API_URL` in the frontend env to point to the deployed API URL (e.g., `https://school-api.onrender.com`).
-
-### Frontend → Vercel or Netlify
-1. Ensure `client/.env` has `VITE_API_URL` pointing to the deployed backend.
-2. Commit and push.
-3. **Vercel**
-   - Import the repo.
-   - Set the root directory to `client`.
-   - Build command `npm run build`, output `dist`.
-   - Add environment variable `VITE_API_URL`.
-4. **Netlify**
-   - Create new site → select repo.
-   - Base directory `client`, build command `npm run build`, publish directory `client/dist`.
-   - Configure env var `VITE_API_URL`.
-
-After deployment, test login + CRUD + attendance flows from the hosted frontend.
-
-## Testing & Notes
-- Frontend production build: `cd client && npm run build` (already verified).<br>
-- Backend relies on a running MongoDB instance. Use `mongod` locally or Atlas in the cloud.
-- Chunk-size warnings during Vite build stem from bundling the entire dashboard; enable dynamic imports or adjust `build.chunkSizeWarningLimit` if needed.
 
 ## Next Ideas
 - Add notifications/email workflows for attendance anomalies.
